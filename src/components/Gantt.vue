@@ -37,27 +37,54 @@
         <span class="demonstration">缩放级别</span>
         <el-input-number style="margin-right: 20px" v-model="timeZoom" size="small" :min="21" :max="26" @change="changeTimeZoom"></el-input-number>
       </div>
-      <el-switch style="margin-right: 20px"
-              active-text="展示任务列表"
-                 v-model="taskdisplay"
-                 @change="showList"
-              >
+      <el-switch style="margin-right: 20px" active-text="展示任务列表" v-model="taskdisplay" @change="showList" >
       </el-switch>
     </el-row>
     <div style="margin-top: 10px;" />
-    <gantt-elastic
-      ref="gantt"
-      :options="options"
-      :tasks="tasks"
-      @tasks-changed="tasksUpdate"
-      @options-changed="optionsUpdate"
-      @dynamic-style-changed="styleUpdate"
-      v-if="checkPre('select')"
-    >
-<!--      <gantt-header slot="header"></gantt-header>-->
-    </gantt-elastic>
-    <div class="q-mt-md" />
-
+    <el-tabs v-model="activeName">
+      <el-tab-pane label="项目信息" name="first">
+        <gantt-elastic
+                ref="gantt"
+                :options="options"
+                :tasks="tasks"
+                @tasks-changed="tasksUpdate"
+                @options-changed="optionsUpdate"
+                @dynamic-style-changed="styleUpdate"
+                v-if="checkPre('select')"
+        >
+          <!--      <gantt-header slot="header"></gantt-header>-->
+        </gantt-elastic>
+        <div class="q-mt-md" />
+      </el-tab-pane>
+      <el-tab-pane label="汇总信息" name="second">
+        <!--汇总信息开始-->
+        <el-row justify="center" align="middle" type="flex" v-if="checkPre('totalInfo')">
+          <el-col :span="12">
+            <h3 style="font-size: 22px;">
+              项目汇总信息
+            </h3>
+            <el-table :data="parents" stripe border style="width: 60%" size="mini">
+              <el-table-column prop="label" label="地区" width="180" align="center">
+              </el-table-column>
+              <el-table-column prop="children.length" label="项目数量" align="center">
+              </el-table-column>
+            </el-table>
+          </el-col>
+          <el-col :span="12">
+            <h3 style="font-size: 22px;">
+              人员出差信息
+            </h3>
+            <el-table :data="userinfos" stripe border style="width: 60%" size="mini">
+              <el-table-column prop="user.username" label="姓名"  width="180" align="center">
+              </el-table-column>
+              <el-table-column prop="location" label="出差地点" align="center">
+              </el-table-column>
+            </el-table>
+          </el-col>
+        </el-row>
+        <!--汇总信息结束-->
+      </el-tab-pane>
+    </el-tabs>
     <el-drawer
             :title="drawerTitle"
             :before-close="handleClose"
@@ -264,7 +291,7 @@ let options = {
             message=message+"负责人："+data.user+"\n"
             message=message+"开始时间："+dayjs(data.startTime).format("YYYY-MM-DD")+"\n"
             message=message+"结束时间："+dayjs(data.endTime).format("YYYY-MM-DD")+"\n"
-            message=message+"进度："+data.id+"%\n"
+            message=message+"进度："+data.percent+"%\n"
             alert(message);
             //console.log(data);
             //console.log(column);
@@ -411,6 +438,8 @@ export default {
       formLabelWidth: '100px',
       timer: null,
       loading: false,
+      activeName: 'first',
+      userinfos:[],
       pickerOptions: {
         disabledDate(time) {
           //return time.getTime() > Date.now();
@@ -536,10 +565,16 @@ export default {
         this.notify("提示","数据加载失败",'error')
       });
     },
-    selectTask(){//获取全部任务
+    selectTask(time){//获取全部任务
+      if(time==null||time==undefined){
+        time=new Date().getTime()
+      }
       request4({
         method: 'get',
-        url: '/task/tasks'
+        url: '/task/tasks',
+        params:{
+          time: time
+        }
       }).then(res=>{
         if(res.data.code=="200"){
           //console.log(res)
@@ -611,6 +646,20 @@ export default {
     },
     setday(time){
       this.$refs.gantt.scrollToTime(time)
+      this.selectTask(time)
+      let that = this
+      request4({
+        method: 'get',
+        url: '/task/travel',
+        params: {
+          time: time
+        }
+      }).then(res=>{
+        //console.log(res)
+        that.userinfos=res.data.data
+      }).catch(err=>{
+        console.log(err)
+      });
       //console.log(this.$refs.gantt)
     },
     changeTimeZoom(value){

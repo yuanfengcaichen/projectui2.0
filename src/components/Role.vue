@@ -40,7 +40,7 @@
               label="操作"
               >
         <template slot-scope="scope">
-          <el-button type="text" size="small" @click="handleClick(scope.row)">查看</el-button>
+<!--          <el-button type="text" size="small" @click="handleClick(scope.row)">查看</el-button>-->
           <el-button type="text" size="small" @click="update(scope.row)">编辑</el-button>
           <el-button type="text" size="small" @click="getroleperes(scope.row.id)">修改权限</el-button>
         </template>
@@ -88,17 +88,16 @@
 
 <script>
   import {request4} from '../network/request.js'
-  import dayjs from "dayjs";
 export default {
   name: "Role",
   data() {
     return {
       roleList: [],
-      editdrawer: false,
       multipleSelection: [],
       pageNum: 1,
       pageSize: 5,
       total: 1,
+      editdrawer: false,
       drawer: false,
       loading: false,
       timer: null,
@@ -112,9 +111,6 @@ export default {
   computed: {
     user(){
       return this.$store.state.user
-    },
-    datefomate(createTime){
-      return dayjs(createTime).format("YYYY-MM-DD")
     }
   },
   methods: {
